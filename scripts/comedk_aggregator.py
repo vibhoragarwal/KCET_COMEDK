@@ -154,6 +154,7 @@ def process_comedk_data(folder_path, branch_codes_file_name, input_excel_name):
             f"{row['Branch Code']}-{row['Branch Name']}"
             for index, row in interested_branches_df.iterrows()
         ]
+        print(all_potential_interested_branch_columns)
 
         all_processed_data = []
 
@@ -188,7 +189,7 @@ def process_comedk_data(folder_path, branch_codes_file_name, input_excel_name):
 
             # Filter for 'GM' category
             df_gm = df_sheet[df_sheet['Seat Category'] == 'GM'].copy()
-
+            df_gm.columns = df_gm.columns.str.replace('\n', '')
             # Create a temporary DataFrame to hold the selected and aligned data for this sheet
             # Initialize with base columns and all potential interested branch columns, filled with pd.NA
             # This ensures all target columns are present from the start for this sheet's data
@@ -197,6 +198,8 @@ def process_comedk_data(folder_path, branch_codes_file_name, input_excel_name):
             for col in base_columns:
                 if col in df_gm.columns:
                     df_aligned_sheet[col] = df_gm[col]
+                else:
+                    print(f'col {col} not in base_columns')
                 # If a base column is missing, it was already caught by the 'if not all(col in df_sheet.columns...' check
 
             # Populate interested branch columns, preserving existing data
@@ -252,16 +255,29 @@ def process_comedk_data(folder_path, branch_codes_file_name, input_excel_name):
 # --- Main execution ---
 if __name__ == "__main__":
     # Define the folder where your input files are located
-    input_folder = '../comedk_files'
+
+    FINAL_MERGED_OUTPUT='COMEDK_ALL_2025_output.xlsx'
+    input_folder = '../comedk_files_2025'
     # Ensure the input folder exists relative to the script's location
     absolute_input_folder = os.path.abspath(input_folder)
 
     branch_codes_file_name = 'COMEDK_BRANCH_CODES.xlsx'
 
-    file_data = [{'COMEDK_R1_12_07_2024.xlsx': "COMEDK_R1_12_07_2024_output.xlsx"},
-                 {'COMEDK_R2_07_08_2024.xlsx': "COMEDK_R2_07_08_2024_output.xlsx"},
-                 {'COMEDK_R3_09_09_2024.xlsx': "COMEDK_R3_09_09_2024_output.xlsx"}
+    # file_data = [{'COMEDK_Mock_2025.xlsx': "COMEDK_Mock_2025_output.xlsx",
+    #               'COMEDK_R1_28_07_2025.xlsx': "COMEDK_R1_28_07_2025_output.xlsx"},
+    #              ]
+    #
+
+    file_data = [{
+                  'COMEDK_R1_28_07_2025.xlsx': "COMEDK_R1_28_07_2025_output.xlsx"},
                  ]
+
+
+    #
+    # file_data = [{'COMEDK_R1_12_07_2024.xlsx': "COMEDK_R1_12_07_2024_output.xlsx"},
+    #              {'COMEDK_R2_07_08_2024.xlsx': "COMEDK_R2_07_08_2024_output.xlsx"},
+    #              {'COMEDK_R3_09_09_2024.xlsx': "COMEDK_R3_09_09_2024_output.xlsx"}
+    #              ]
 
     wb_lists = []
 
@@ -291,4 +307,4 @@ if __name__ == "__main__":
             except Exception as e:
                 print(f"An unexpected error occurred while processing '{input_file}': {e}\n")
 
-    combine_sheets_from_multiple_excels(wb_lists, os.path.join(absolute_input_folder, 'COMEDK_ALL_2024_output.xlsx'))
+    combine_sheets_from_multiple_excels(wb_lists, os.path.join(absolute_input_folder, FINAL_MERGED_OUTPUT))

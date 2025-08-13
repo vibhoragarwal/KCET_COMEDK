@@ -48,9 +48,7 @@ def process_excel_data(file_path):
             return None
 
         # Print the extracted course data
-        print("Course Data:")
-        for course in course_data:
-            print(course)
+
 
     except FileNotFoundError:
         print(f"Error: File not found at {file_path}")
@@ -124,7 +122,7 @@ def extract_and_format_data(course_data, excel_file_path, output_file_path=None)
     """
     try:
         # Read all sheets from the Excel file
-        excel_data = pd.read_excel(excel_file_path, sheet_name=None)
+        excel_data = pd.read_excel(excel_file_path, sheet_name=None, header=None)
 
         all_data = []  # List to store processed data from all sheets
 
@@ -141,37 +139,44 @@ def extract_and_format_data(course_data, excel_file_path, output_file_path=None)
             for i in range(len(df)):
                 row = df.iloc[i]
 
-                # Check if the row contains college code and name using regex
-                if isinstance(row[0], str):
-                    match = re.search(r".*?(E\d+)\s+(.*)", row[0])
+                first_cell_value = row[0]  # The value in the first column of the current row
+
+                print(f"first cell: {first_cell_value}")  # This will now print the content of cell A1 first
+
+                if isinstance(first_cell_value, str):
+
+                    match = re.search( r".*?\(?(E\d+)\)?\s*(.*)", first_cell_value)
+                    print(first_cell_value, match)
                     if match:
                         college_code = match.group(1)
                         college_name = match.group(2)
+                        print(college_code, college_name)
                         new_section = True
                         gm_index = -1
                         continue  # Skip to the next row
 
+
                 # If college code and name are found, process the table
                 if college_code and college_name:
                     # Assuming table headers are in the same row
-                    if "BAN" not in college_name.upper() and "BEN" not in college_name.upper():
-                        print(f'skip college {college_name}')
-                        continue
+                    # if "BAN" not in college_name.upper() and "BEN" not in college_name.upper():
+                    #     print(f'skip college {college_name}')
+                    #     continue
 
                     if "KALBURGI" in college_name.upper():
-                        print(f'skip college {college_name}')
+                        ##print(f'skip college {college_name}')
                         continue
                     if "BANTWAL" in college_name.upper():
                         print(f'skip college {college_name}')
                         continue
                     if "BANGARAPET" in college_name.upper():
-                        print(f'skip college {college_name}')
+                        #print(f'skip college {college_name}')
                         continue
                     if "MANGALORE" in college_name.upper():
-                        print(f'skip college {college_name}')
+                       # print(f'skip college {college_name}')
                         continue
                     if "RANEBENNUR" in college_name.upper():
-                        print(f'skip college {college_name}')
+                        #print(f'skip college {college_name}')
                         continue
 
                     headers = df.iloc[i].tolist()
@@ -181,20 +186,19 @@ def extract_and_format_data(course_data, excel_file_path, output_file_path=None)
                                 gm_index = j
                                 break
                     branch_gm_data = {'College Code': college_code, 'College Name': college_name}
-
                     # check if the next row exists before accessing
+
+                    course_codes = ["computer", "artificial", "electronics","robotics", "information", "iot", "robotics", "data", "cyber"]
                     if i + 1 < len(df):
                         branch_row = df.iloc[i + 1].tolist()
                         branch_name = branch_row[0]
                         if isinstance(branch_name, str):
                             interested_course =False
-                            for course in course_data:
-                                course_code = course['COURSE CODE']
-                                course_name = course['COURSE DETAIL']
-                                if branch_name.strip().startswith(course_code+ " "):
-                                    branch_name = f"{course_code} [{course_name}]"
+
+                            for code in course_codes:
+                                if code in branch_name.strip().lower():
                                     interested_course = True
-                                    break  # Stop after the first match
+                                    break  # Found a match, no need to check further
                             if not interested_course:
                                 continue
 
@@ -212,22 +216,21 @@ def extract_and_format_data(course_data, excel_file_path, output_file_path=None)
             # Convert the list of dictionaries to a DataFrame for the current sheet
             #formatted_df = create_dataframe_from_list(data)
             all_data.extend(data)
-            print('   appended to all data')
+            print('   appended to all data', data)
 
         print("ALL SHEETS DONE")
         # Convert the list of dictionaries to a DataFrame
         ##final_df = pd.DataFrame(data)
         final_df = create_dataframe_from_list(all_data)
-        print("final_df DONE")
+        print("final_df DONE",final_df)
         # Save the final DataFrame to a new Excel file
         #final_df.to_excel(output_file_path, index=False)
 
         output_file_path = output_file_path or excel_file_path
-
+        print(f'saving output to {output_file_path}')
         with pd.ExcelWriter(output_file_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as excel_writer:
             final_df.to_excel(excel_writer, sheet_name='AGGREGATED', index=False)
-
-        print(f"Formatted data saved to {output_file_path}")
+        print(f'saved output to {output_file_path}')
 
         # Load the workbook and reorder sheets
         wb = load_workbook(output_file_path)
@@ -283,13 +286,13 @@ def extract_and_format_data(course_data, excel_file_path, output_file_path=None)
 
 if __name__ == "__main__":
     course_data = process_excel_data("../kcet_config/COURSECODE_ENGGkannada.xlsx")
-
+    BASE = "../kcet_files_2025"
     # Get all Excel files in the directory
-    excel_files = [f for f in os.listdir("../kcet_files") if f.endswith(('.xlsx', '.xls'))]
+    excel_files = [f for f in os.listdir(BASE) if f.endswith(('.xlsx', '.xls'))]
 
     for excel_file in excel_files:
-        excel_file_path = os.path.join("../kcet_files", excel_file)
+        excel_file_path = os.path.join(BASE, excel_file)
         print(f"Processing file: {excel_file_path}")
-        extract_and_format_data(course_data, excel_file_path)  # Pass the output file path
+        extract_and_format_data(course_data, excel_file_path, excel_file_path)  # Pass the output file path
 
     print("All files processed.")
